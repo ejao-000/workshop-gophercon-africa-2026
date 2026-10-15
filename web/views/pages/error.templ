@@ -2,14 +2,19 @@ package pages
 
 import (
 	"strconv"
+
 	"workshop/web/views/layout"
 )
 
 templ Error(message string, code int) {
 	@layout.Base(layout.BaseProps{
-		Title: "Error " + strconv.Itoa(code),
+		Title: "Error " + strconv.Itoa(code) + " — Sighting Log",
 	}) {
-		<h1>{ strconv.Itoa(code) }</h1>
-		<p>{ message }</p>
+		<div class="error-page">
+			<p class="error-page__code">{ strconv.Itoa(code) }</p>
+			<h1 class="section__title">Something went wrong</h1>
+			<p class="section__lead">{ message }</p>
+			<p><a class="button" href="/">Back to the sightings</a></p>
+		</div>
 	}
 }

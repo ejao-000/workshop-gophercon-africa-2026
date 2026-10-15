@@ -1,0 +1,41 @@
+package pages
+
+import (
+	"strconv"
+
+	"workshop/internal/domain/sighting"
+	"workshop/web/views/components"
+	"workshop/web/views/layout"
+)
+
+templ Map(sightings []sighting.Sighting) {
+	{{ points := components.MapPoints(sightings) }}
+	@layout.Base(layout.BaseProps{
+		Title:       "Map — Sighting Log",
+		Description: "Every recorded sighting on one map, grouped by area.",
+		Current:     "map",
+		Map:         true,
+	}) {
+		<section class="section">
+			<div class="wrap">
+				<div class="section__head">
+					<div>
+						<p class="eyebrow">Where they were seen</p>
+						<h2 class="section__title">The map</h2>
+					</div>
+					<p class="section__lead">{ strconv.Itoa(len(points)) } charted places. Click a dot to open the record.</p>
+				</div>
+				if len(points) == 0 {
+					<p class="empty">No sightings carry coordinates yet, so there is nothing to pin.</p>
+				} else {
+					@components.Map(components.MapProps{
+						Points:  points,
+						Cluster: true,
+						Label:   "A map of every sighting, clustered by area",
+						Class:   "map--tall",
+					})
+				}
+			</div>
+		</section>
+	}
+}

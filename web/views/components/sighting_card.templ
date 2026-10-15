@@ -10,35 +10,39 @@ import (
 	"workshop/internal/domain/species"
 )
 
-templ SightingCard(s sighting.Sighting) {
-	<article class="card">
-		<!-- Header -->
-		<header class="card__header">
-			<h2>{ displayName(s.Species) }</h2>
+templ SightingTile(s sighting.Sighting) {
+	<article class="tile" { FilterAttrs(s)... }>
+		@tilePhoto(s)
+		<div class="tile__body">
+			<h3 class="tile__title"><a href={ templ.URL(SightingURL(s)) }>{ displayName(s.Species) }</a></h3>
 			if s.Species.ScientificName != "" {
-				<p class="card__scientific">{ s.Species.ScientificName }</p>
+				<p class="tile__sci">{ s.Species.ScientificName }</p>
 			}
-		</header>
-		<!-- Meta -->
-		<dl class="card__meta">
-			<dt>Seen</dt>
-			<dd>{ s.HappenedAt.Format("2 January 2006") }</dd>
-			<dt>Where</dt>
-			<dd>{ place(s.Location) }</dd>
-			if s.IndividualCount != nil {
-				<dt>Count</dt>
-				<dd>{ individuals(*s.IndividualCount) }</dd>
-			}
-			if s.RecordedBy != "" {
-				<dt>Recorded by</dt>
-				<dd>{ s.RecordedBy }</dd>
-			}
-		</dl>
-		<!-- Gallery -->
-		<div class="card__gallery">
-			@Gallery(s.Media)
+			<p class="tile__meta">
+				<span>
+					<svg class="tile__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+					{ place(s.Location) }
+				</span>
+				<span>
+					<svg class="tile__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg>
+					{ s.HappenedAt.Format("2 Jan 2006") }
+				</span>
+			</p>
+			<div class="tile__weather">
+				@Weather(s.Weather)
+			</div>
 		</div>
 	</article>
+}
+
+templ tilePhoto(s sighting.Sighting) {
+	if m, ok := firstPhoto(s); ok {
+		<a class="tile__photo" href={ templ.URL(m.URL) } data-lightbox data-caption={ credit(m) }>
+			<img src={ m.URL } alt={ photoAlt(s, m) } loading="lazy" width="800" height="600"/>
+		</a>
+	} else {
+		<span class="tile__photo tile__photo--none" aria-hidden="true">{ initial(s) }</span>
+	}
 }
 
 // displayName prefers the name a reader would recognise, falling back
@@ -62,4 +66,49 @@ func individuals(n int) string {
 		return "1 individual"
 	}
 	return fmt.Sprintf("%d individuals", n)
+}
+
+// SightingURL is the address of a sighting's own page.
+func SightingURL(s sighting.Sighting) string {
+	return "/sightings/" + s.ID.String()
+}
+
+// Place is where a sighting happened, for pages outside the tile.
+func Place(l sighting.Location) string { return place(l) }
+
+// Count spells out how many animals were seen, or nothing when GBIF didn't say.
+func Count(n *int) string {
+	if n == nil {
+		return ""
+	}
+	return individuals(*n)
+}
+
+// firstPhoto returns the first still image on a sighting, if it has one.
+func firstPhoto(s sighting.Sighting) (sighting.Media, bool) {
+	for _, m := range s.Media {
+		if m.Type == "StillImage" && m.URL != "" {
+			return m, true
+		}
+	}
+	return sighting.Media{}, false
+}
+
+// photoAlt describes a photo for someone who can't see it.
+func photoAlt(s sighting.Sighting, m sighting.Media) string {
+	return cmp.Or(m.Title, m.Description, displayName(s.Species)+", "+place(s.Location))
+}
+
+// credit names whoever made a photo, for the lightbox caption.
+func credit(m sighting.Media) string {
+	return cmp.Or(m.Creator, m.RightsHolder, m.License)
+}
+
+// initial is the first letter of an animal's name, for a photo-less tile.
+func initial(s sighting.Sighting) string {
+	runes := []rune(displayName(s.Species))
+	if len(runes) == 0 {
+		return "?"
+	}
+	return strings.ToUpper(string(runes[0]))
 }

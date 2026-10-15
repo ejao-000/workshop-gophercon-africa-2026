@@ -1,7 +1,14 @@
 package layout
 
+import "workshop/web/views/components"
+
+// BaseProps is what every page hands the shared shell. Current is the nav
+// item to mark as the open page: "sightings", "map", "gallery" or "stats".
 type BaseProps struct {
-	Title string
+	Title       string
+	Description string
+	Current     string
+	Map         bool
 }
 
 templ Base(props BaseProps) {
@@ -11,13 +18,93 @@ templ Base(props BaseProps) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ props.Title }</title>
+			if props.Description != "" {
+				<meta name="description" content={ props.Description }/>
+			}
+			<link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml"/>
+			<link rel="manifest" href="/assets/manifest.json"/>
+			<meta name="theme-color" content="#f6f8f3"/>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap"/>
+			<script>
+				document.documentElement.classList.add('js')
+			</script>
 			<link rel="stylesheet" href="/assets/css/app.css"/>
+			<link rel="stylesheet" href="/assets/css/filter.css"/>
+			<link rel="stylesheet" href="/assets/css/charts.css"/>
+			<link rel="stylesheet" href="/assets/css/weather.css"/>
+			<link rel="stylesheet" href="/assets/css/lightbox.css"/>
+			<link rel="stylesheet" href="/assets/css/reveal.css"/>
+			<link rel="stylesheet" href="/assets/css/threejs.css"/>
+			if props.Map {
+				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+				<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" integrity="sha384-pmjIAcz2bAn0xukfxADbZIb3t8oRT9Sv0rvO+BR5Csr6Dhqq+nZs59P0pPKQJkEV" crossorigin="anonymous"/>
+				<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" integrity="sha384-wgw+aLYNQ7dlhK47ZPK7FRACiq7ROZwgFNg0m04avm4CaXS+Z9Y7nMu8yNjBKYC+" crossorigin="anonymous"/>
+				<link rel="stylesheet" href="/assets/css/map.css"/>
+			}
+			<script type="importmap">
+				{
+					"imports": {
+						"three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+						"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+					}
+				}
+			</script>
 		</head>
 		<body>
-			<main class="container">
+			@components.WeatherIcons()
+			<a class="skip-link" href="#main">Skip to content</a>
+			<header class="site-header">
+				<div class="wrap site-header__inner">
+					<a class="logo" href="/">
+						<img src="/assets/images/logo.svg" alt="Sighting Log, home" width="40" height="40"/>
+						<span>
+							<span class="logo__name">Sighting Log</span>
+							<span class="logo__tag">Field notes on wildlife</span>
+						</span>
+					</a>
+					<nav class="site-nav" aria-label="Primary">
+						<a href="/" aria-current={ current(props.Current, "sightings") }>Sightings</a>
+						<a href="/map" aria-current={ current(props.Current, "map") }>Map</a>
+						<a href="/gallery" aria-current={ current(props.Current, "gallery") }>Gallery</a>
+						<a href="/stats" aria-current={ current(props.Current, "stats") }>Statistics</a>
+					</nav>
+				</div>
+			</header>
+			<main id="main">
 				{ children... }
 			</main>
-			<script src="/assets/js/app.js"></script>
+			<footer class="site-footer">
+				<div class="wrap site-footer__inner">
+					<p>Sighting Log · records from GBIF, weather from Open-Meteo.</p>
+					<nav aria-label="Footer">
+						<a href="/">Sightings</a>
+						<a href="/map">Map</a>
+						<a href="/gallery">Gallery</a>
+						<a href="/stats">Statistics</a>
+					</nav>
+				</div>
+			</footer>
+			@components.Lightbox()
+			if props.Map {
+				<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+				<script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" integrity="sha384-eXVCORTRlv4FUUgS/xmOyr66XBVraen8ATNLMESp92FKXLAMiKkerixTiBvXriZr" crossorigin="anonymous" defer></script>
+				<script src="/assets/js/map.js" defer></script>
+			}
+			<script src="/assets/js/reveal.js" defer></script>
+			<script src="/assets/js/lightbox.js" defer></script>
+			<script src="/assets/js/filter.js" defer></script>
+			<script src="/assets/js/app.js" defer></script>
 		</body>
 	</html>
+}
+
+// current renders aria-current="page" for the nav item that is open, and
+// a plain empty value otherwise.
+func current(active, key string) string {
+	if active == key {
+		return "page"
+	}
+	return ""
 }

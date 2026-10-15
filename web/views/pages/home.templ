@@ -1,27 +1,175 @@
 package pages
 
 import (
+	"strconv"
+
 	"workshop/internal/domain/sighting"
 	"workshop/web/views/components"
 	"workshop/web/views/layout"
 )
 
 templ Home(sightings []sighting.Sighting) {
+	{{ sum := sighting.Summarise(sightings) }}
+	{{ byYear := sighting.CountByYear(sightings) }}
+	{{ globe := components.GlobePoints(sightings) }}
+	{{ topAnimals := components.TopAnimals(sightings, 6) }}
+	{{ topCountries := components.TopCountries(sightings, 6) }}
 	@layout.Base(layout.BaseProps{
-		Title: "Sightings",
+		Title:       "Sighting Log — wildlife sightings",
+		Description: "A field record of wildlife sightings from around the world: 500 sightings, their photos, weather and places.",
+		Current:     "sightings",
 	}) {
-		<h1>Sightings</h1>
-		if len(sightings) == 0 {
-			<p>No sightings have been ingested yet.</p>
-		} else {
-			<p>Total: { len(sightings) }</p>
-			<ul class="sightings">
-				for _, s := range sightings {
+		<section class="hero reveal">
+			<div class="wrap hero__inner">
+				<div class="hero__copy">
+					<p class="eyebrow">Around the world{ yearSpan(sum) }</p>
+					<h1 class="hero__title">A field log of the wild</h1>
+					<p class="hero__lead">Every sighting GBIF has recorded for the animals this log follows — where they were seen, when, and the weather on the day.</p>
+					<div class="hero__actions">
+						<a class="button" href="#sightings">Browse the sightings</a>
+						<a class="button button--ghost" href="/map">Open the map</a>
+					</div>
+				</div>
+				<div class="hero__globe">
+					@components.ThreeScene(components.ThreeSceneProps{
+						Scene: "globe",
+						Label: "A globe with a point marking each sighting",
+					})
+					@templ.JSONScript("globe-points", globe)
+					<p class="hero__globe-caption">{ strconv.Itoa(len(globe)) } places charted</p>
+				</div>
+			</div>
+		</section>
+
+		<section class="section reveal">
+			<div class="wrap">
+				<div class="section__head">
+					<div>
+						<p class="eyebrow">The record so far</p>
+						<h2 class="section__title">What the log holds</h2>
+					</div>
+					<p class="section__lead">Readings collected by naturalists and observers, gathered from a single shared index.</p>
+				</div>
+				<ul class="stats">
 					<li>
-						@components.SightingCard(s)
+						<span class="stat__value">{ strconv.Itoa(sum.Sightings) }</span>
+						<span class="stat__label">Sightings</span>
 					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Species) }</span>
+						<span class="stat__label">Species</span>
+					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Countries) }</span>
+						<span class="stat__label">Countries</span>
+					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Media) }</span>
+						<span class="stat__label">Photos</span>
+					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Recorders) }</span>
+						<span class="stat__label">Recorders</span>
+					</li>
+				</ul>
+			</div>
+		</section>
+
+		<section class="section reveal" id="sightings">
+			<div class="wrap">
+				<div class="section__head">
+					<div>
+						<p class="eyebrow">The sightings</p>
+						<h2 class="section__title">Browse the field log</h2>
+					</div>
+					<p class="section__lead">Search by animal, place or recorder, or narrow the wall with a chip.</p>
+				</div>
+				if len(sightings) == 0 {
+					<p class="empty">No sightings have been recorded yet. Run the seed step to load the index.</p>
+				} else {
+					@components.Filter(components.FilterProps{
+						Target: "sightings",
+						Search: true,
+						Groups: []components.FilterGroup{
+							{Key: "animal", Label: "Animal", Options: components.FilterOptions(sightings, 12, components.Animal)},
+							{Key: "country", Label: "Country", Options: components.FilterOptions(sightings, 12, components.Country)},
+						},
+					})
+					<div id="sightings" class="tiles">
+						for _, s := range sightings {
+							@components.SightingTile(s)
+						}
+					</div>
 				}
-			</ul>
-		}
+			</div>
+		</section>
+
+		<section class="section reveal" id="numbers">
+			<div class="wrap">
+				<div class="section__head">
+					<div>
+						<p class="eyebrow">By the numbers</p>
+						<h2 class="section__title">Where the sightings fall</h2>
+					</div>
+					<p class="section__lead">The busiest animals and places, and the shape of the log over the years.</p>
+				</div>
+				<div class="charts">
+					<div class="chart-card">
+						<h3>Sightings per year</h3>
+						@components.Sparkline(byYear, sum)
+						<p class="section__lead">{ yearRange(sum) }</p>
+					</div>
+					<div class="chart-card">
+						<h3>Most-seen animals</h3>
+						@components.Bars(topAnimals)
+					</div>
+					<div class="chart-card">
+						<h3>Most sightings by country</h3>
+						@components.Bars(topCountries)
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="section reveal">
+			<div class="wrap">
+				<div class="section__head">
+					<div>
+						<p class="eyebrow">Keep exploring</p>
+						<h2 class="section__title">Other ways to look</h2>
+					</div>
+				</div>
+				<div class="charts">
+					<a class="chart-card" href="/map">
+						<h3>On the map</h3>
+						<p class="section__lead">Every sighting pinned where it happened, grouped by area.</p>
+					</a>
+					<a class="chart-card" href="/gallery">
+						<h3>In the gallery</h3>
+						<p class="section__lead">All { strconv.Itoa(sum.Media) } photographs, click any one to see it large.</p>
+					</a>
+					<a class="chart-card" href="/stats">
+						<h3>In the statistics</h3>
+						<p class="section__lead">The full tallies behind the log, animal by animal and country by country.</p>
+					</a>
+				</div>
+			</div>
+		</section>
 	}
+}
+
+// yearSpan names the years the log covers, or nothing when it is empty.
+func yearSpan(sum sighting.Summary) string {
+	if sum.Sightings == 0 {
+		return ""
+	}
+	return ", " + strconv.Itoa(sum.Earliest.Year()) + "–" + strconv.Itoa(sum.Latest.Year())
+}
+
+// yearRange spells out the first and last year on the line.
+func yearRange(sum sighting.Summary) string {
+	if sum.Sightings == 0 {
+		return ""
+	}
+	return strconv.Itoa(sum.Earliest.Year()) + " to " + strconv.Itoa(sum.Latest.Year())
 }

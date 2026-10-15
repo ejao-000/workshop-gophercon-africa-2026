@@ -1,0 +1,43 @@
+package pages
+
+import (
+	"strconv"
+
+	"workshop/internal/domain/sighting"
+	"workshop/web/views/layout"
+)
+
+templ Gallery(sightings []sighting.Sighting) {
+	{{ items := galleryItems(sightings) }}
+	@layout.Base(layout.BaseProps{
+		Title:       "Gallery — Sighting Log",
+		Description: "Every photograph recorded with the sightings, in one wall.",
+		Current:     "gallery",
+	}) {
+		<section class="section">
+			<div class="wrap">
+				<div class="section__head">
+					<div>
+						<p class="eyebrow">The photographs</p>
+						<h2 class="section__title">Gallery</h2>
+					</div>
+					<p class="section__lead">{ strconv.Itoa(len(items)) } pictures. Click any one to see it full size.</p>
+				</div>
+				if len(items) == 0 {
+					<p class="empty">No photographs have been recorded yet.</p>
+				} else {
+					<div class="gallery-grid">
+						for _, it := range items {
+							<figure>
+								<a href={ templ.URL(it.URL) } data-lightbox data-caption={ it.Caption }>
+									<img src={ it.URL } alt={ it.Alt } loading="lazy" width="400" height="400"/>
+								</a>
+								<figcaption>{ it.Animal } · { it.Place }</figcaption>
+							</figure>
+						}
+					</div>
+				}
+			</div>
+		</section>
+	}
+}

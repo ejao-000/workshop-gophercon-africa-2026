@@ -1,0 +1,79 @@
+package pages
+
+import (
+	"strconv"
+
+	"workshop/internal/domain/sighting"
+	"workshop/web/views/components"
+	"workshop/web/views/layout"
+)
+
+templ Stats(sightings []sighting.Sighting) {
+	{{ sum := sighting.Summarise(sightings) }}
+	{{ byYear := sighting.CountByYear(sightings) }}
+	{{ topAnimals := components.TopAnimals(sightings, 12) }}
+	{{ topCountries := components.TopCountries(sightings, 12) }}
+	@layout.Base(layout.BaseProps{
+		Title:       "Statistics — Sighting Log",
+		Description: "The tallies behind the sighting log: species, countries, recorders and the years.",
+		Current:     "stats",
+	}) {
+		<section class="section">
+			<div class="wrap">
+				<div class="section__head">
+					<div>
+						<p class="eyebrow">The numbers</p>
+						<h2 class="section__title">Statistics</h2>
+					</div>
+					<p class="section__lead">Summed from every sighting in the log.</p>
+				</div>
+				<ul class="stats">
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Sightings) }</span>
+						<span class="stat__label">Sightings</span>
+					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Species) }</span>
+						<span class="stat__label">Species</span>
+					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Countries) }</span>
+						<span class="stat__label">Countries</span>
+					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Media) }</span>
+						<span class="stat__label">Photos</span>
+					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Individuals) }</span>
+						<span class="stat__label">Individuals</span>
+					</li>
+					<li>
+						<span class="stat__value">{ strconv.Itoa(sum.Recorders) }</span>
+						<span class="stat__label">Recorders</span>
+					</li>
+				</ul>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="wrap">
+				<div class="charts">
+					<div class="chart-card">
+						<h3>Sightings per year</h3>
+						@components.Sparkline(byYear, sum)
+						<p class="section__lead">{ yearRange(sum) }</p>
+					</div>
+					<div class="chart-card">
+						<h3>Most-seen animals</h3>
+						@components.Bars(topAnimals)
+					</div>
+					<div class="chart-card">
+						<h3>Most sightings by country</h3>
+						@components.Bars(topCountries)
+					</div>
+				</div>
+			</div>
+		</section>
+	}
+}

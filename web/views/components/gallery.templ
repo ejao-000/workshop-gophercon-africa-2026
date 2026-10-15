@@ -2,24 +2,23 @@ package components
 
 import (
 	"cmp"
+
 	"workshop/internal/domain/sighting"
 )
 
-templ Gallery(items []sighting.Media) {
+templ MediaGrid(s sighting.Sighting, items []sighting.Media) {
 	if len(items) == 0 {
-		<p class="gallery__empty">No media recorded.</p>
+		<p class="empty">No photos were recorded for this sighting.</p>
 	} else {
-		<ul class="gallery">
+		<ul class="detail__thumbs">
 			for _, m := range items {
-				<!-- Items -->
-				<li class="gallery__item">
-					if m.Type == "StillImage" {
-						<img src={ m.URL } alt={ altText(m) } loading="lazy"/>
-					} else {
+				<li>
+					if m.Type == "StillImage" && m.URL != "" {
+						<a href={ templ.URL(m.URL) } data-lightbox data-caption={ credit(m) }>
+							<img src={ m.URL } alt={ photoAlt(s, m) } loading="lazy" width="400" height="300"/>
+						</a>
+					} else if m.URL != "" {
 						<a href={ templ.URL(m.URL) } rel="noopener">{ altText(m) }</a>
-					}
-					if m.Creator != "" {
-						<figcaption class="gallery__credit">{ m.Creator }</figcaption>
 					}
 				</li>
 			}

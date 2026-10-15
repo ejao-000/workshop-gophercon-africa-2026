@@ -1,0 +1,21 @@
+package pages
+
+import "workshop/web/views/layout"
+
+templ NotFound() {
+	@layout.Base(layout.BaseProps{
+		Title:       "Not found — Sighting Log",
+		Description: "That page could not be found.",
+	}) {
+		<div class="error-page">
+			<p class="error-page__code">404</p>
+			<p class="eyebrow">Off the map</p>
+			<h1 class="section__title">This trail goes nowhere</h1>
+			<p class="section__lead">We couldn't find that page. It may have been moved, or the sighting may no longer be in the log.</p>
+			<p>
+				<a class="button" href="/">Back to the sightings</a>
+				<a class="button button--ghost" href="/map">Try the map</a>
+			</p>
+		</div>
+	}
+}

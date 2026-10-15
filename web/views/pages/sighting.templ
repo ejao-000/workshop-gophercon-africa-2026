@@ -1,0 +1,123 @@
+package pages
+
+import (
+	"fmt"
+
+	"workshop/internal/domain/sighting"
+	"workshop/web/views/components"
+	"workshop/web/views/layout"
+)
+
+templ Sighting(s sighting.Sighting) {
+	{{ count := components.Count(s.IndividualCount) }}
+	@layout.Base(layout.BaseProps{
+		Title:       components.Animal(s) + " — Sighting Log",
+		Description: "A single sighting of " + components.Animal(s) + " at " + components.Place(s.Location) + ".",
+		Current:     "sightings",
+		Map:         hasLocation(s),
+	}) {
+		<section class="section">
+			<div class="wrap">
+				<a class="detail__back" href="/">← All sightings</a>
+				<div class="detail">
+					<div>
+						@heroPhoto(s)
+						@components.MediaGrid(s, s.Media)
+					</div>
+					<aside class="detail__panel">
+						<div>
+							<p class="eyebrow">Sighting</p>
+							<h1 class="section__title">{ components.Animal(s) }</h1>
+							if s.Species.ScientificName != "" {
+								<p class="tile__sci">{ s.Species.ScientificName }</p>
+							}
+						</div>
+						<dl class="detail__facts">
+							<div>
+								<dt>Seen</dt>
+								<dd>{ s.HappenedAt.Format("2 January 2006") }</dd>
+							</div>
+							<div>
+								<dt>Where</dt>
+								<dd>{ components.Place(s.Location) }</dd>
+							</div>
+							if hasLocation(s) {
+								<div>
+									<dt>Coordinates</dt>
+									<dd>{ coords(s) }</dd>
+								</div>
+							}
+							if count != "" {
+								<div>
+									<dt>Count</dt>
+									<dd>{ count }</dd>
+								</div>
+							}
+							if s.RecordedBy != "" {
+								<div>
+									<dt>Recorded by</dt>
+									<dd>{ s.RecordedBy }</dd>
+								</div>
+							}
+							if s.BasisOfRecord != "" {
+								<div>
+									<dt>Basis of record</dt>
+									<dd>{ s.BasisOfRecord }</dd>
+								</div>
+							}
+							<div>
+								<dt>Weather</dt>
+								<dd>@components.Weather(s.Weather)</dd>
+							</div>
+							if s.ReferenceURL != "" {
+								<div>
+									<dt>Source</dt>
+									<dd><a href={ templ.URL(s.ReferenceURL) } rel="noopener">View the original record</a></dd>
+								</div>
+							}
+						</dl>
+						if hasLocation(s) {
+							@components.Map(components.MapProps{
+								Points: components.MapPoints([]sighting.Sighting{s}),
+								ID:     "sighting-map",
+								Label:  "Where this sighting happened",
+							})
+						}
+					</aside>
+				</div>
+			</div>
+		</section>
+	}
+}
+
+templ heroPhoto(s sighting.Sighting) {
+	if m, ok := firstPhotoOf(s); ok {
+		<figure class="detail__hero">
+			<a href={ templ.URL(m.URL) } data-lightbox data-caption={ m.Creator }>
+				<img src={ m.URL } alt={ components.Animal(s) + " at " + components.Place(s.Location) } width="1200" height="750"/>
+			</a>
+		</figure>
+	} else {
+		<p class="empty">No photograph was recorded for this sighting.</p>
+	}
+}
+
+// hasLocation reports whether a sighting carries usable coordinates.
+func hasLocation(s sighting.Sighting) bool {
+	return s.Location.Latitude != 0 || s.Location.Longitude != 0
+}
+
+// coords formats a sighting's position for display.
+func coords(s sighting.Sighting) string {
+	return fmt.Sprintf("%.4f, %.4f", s.Location.Latitude, s.Location.Longitude)
+}
+
+// firstPhotoOf returns the first still image on a sighting, if any.
+func firstPhotoOf(s sighting.Sighting) (sighting.Media, bool) {
+	for _, m := range s.Media {
+		if m.Type == "StillImage" && m.URL != "" {
+			return m, true
+		}
+	}
+	return sighting.Media{}, false
+}
